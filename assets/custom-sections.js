@@ -149,6 +149,88 @@
   }
 
 
+
+  function moveHeroBenefitsAfterPreview(hero, previewSection) {
+    if (document.querySelector("[data-custom-benefits-section]")) {
+      return document.querySelector("[data-custom-benefits-section]");
+    }
+
+    const benefitsList = Array.from(hero.querySelectorAll("ul")).find((list) =>
+      normalizeText(list.textContent).includes("material completo para tea") &&
+      normalizeText(list.textContent).includes("organiza a rotina")
+    );
+
+    if (!benefitsList) return null;
+
+    const section = document.createElement("section");
+    section.className = "custom-benefits-section bg-background py-8 sm:py-10";
+    section.dataset.customBenefitsSection = "true";
+    section.innerHTML = '<div class="section-container px-4 sm:px-6"></div>';
+    section.querySelector("div").appendChild(benefitsList);
+    previewSection.insertAdjacentElement("afterend", section);
+    return section;
+  }
+
+  function cleanCategorySection(main) {
+    const categorySection = findSectionByText(main, "Comunicação Alternativa e CAA");
+    if (!categorySection) return null;
+
+    categorySection.dataset.customCategorySection = "true";
+
+    const contentCard = Array.from(categorySection.querySelectorAll("div")).find((element) =>
+      normalizeText(element.textContent).includes("comunicacao alternativa e caa") &&
+      normalizeText(element.textContent).includes("libras e inclusao") &&
+      element.querySelector('img[src*="recursos-prontos-comunica-kids"]')
+    );
+
+    if (contentCard) {
+      Array.from(contentCard.children).forEach((child) => {
+        const text = normalizeText(child.textContent || "");
+        const hasMockup = !!child.querySelector('img[src*="recursos-prontos-comunica-kids"]');
+        const isCategoryGrid = text.includes("comunicacao alternativa e caa") && text.includes("libras e inclusao");
+        if (!isCategoryGrid || hasMockup) child.remove();
+      });
+      contentCard.className = contentCard.className.replace(/\bmb-14\b/g, "").replace(/\bsm:mb-16\b/g, "").trim();
+    }
+
+    const container = categorySection.querySelector(".section-container");
+    if (container) {
+      Array.from(container.children).forEach((child) => {
+        if (!normalizeText(child.textContent).includes("comunicacao alternativa e caa")) {
+          child.remove();
+        }
+      });
+    }
+
+    return categorySection;
+  }
+
+  function orderSections(main, anchors) {
+    const { hero, previewSection, benefitsSection, personaSection, categorySection } = anchors;
+    if (!hero || !previewSection) return;
+
+    let cursor = hero;
+    [previewSection, benefitsSection, personaSection, categorySection].forEach((section) => {
+      if (section && section.previousElementSibling !== cursor) {
+        cursor.insertAdjacentElement("afterend", section);
+      }
+      if (section) cursor = section;
+    });
+
+    const bonusHighlight = findSectionByText(main, "Super Bônus Exclusivo");
+    const bonusGrid = findSectionByText(main, "Bônus do Pacote Completo");
+    const testimonials = findSectionByText(main, "Feedbacks recebidos");
+    const offer = document.querySelector("#packages")?.closest("section");
+    const guarantee = findSectionByText(main, "Garantia de 7 dias");
+    const faq = findSectionByText(main, "Perguntas frequentes");
+
+    [bonusHighlight, bonusGrid, testimonials, offer, guarantee, faq].forEach((section) => {
+      if (section && section.previousElementSibling !== cursor) {
+        cursor.insertAdjacentElement("afterend", section);
+      }
+      if (section) cursor = section;
+    });
+  }
   function markCompactBonusSections() {
     const main = document.querySelector("#root main");
     if (!main) return false;
@@ -177,12 +259,19 @@
 
     markCompactBonusSections();
 
-    hero.insertAdjacentElement("afterend", makePreviewSection());
-    firstPersona.replaceWith(makePersonaSection());
+    const previewSection = makePreviewSection();
+    hero.insertAdjacentElement("afterend", previewSection);
+    const benefitsSection = moveHeroBenefitsAfterPreview(hero, previewSection);
+
+    const personaSection = makePersonaSection();
+    firstPersona.replaceWith(personaSection);
 
     if (secondPersona && !secondPersona.dataset.customPersonaSection) {
       secondPersona.remove();
     }
+
+    const categorySection = cleanCategorySection(main);
+    orderSections(main, { hero, previewSection, benefitsSection, personaSection, categorySection });
 
     return true;
   }

@@ -74,7 +74,7 @@
   function makePreviewSection() {
     const cards = previewLabels.map((label, index) => `
       <figure class="preview-card">
-        <img class="preview-image" src="public/previews/${label}" alt="Preview do material ${index + 1}" loading="lazy" decoding="async">
+        <img class="preview-image" src="assets/previews/${label}" alt="Preview do material ${index + 1}" loading="lazy" decoding="async">
       </figure>
     `).join("");
 
